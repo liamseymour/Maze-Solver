@@ -1,6 +1,7 @@
 from PIL import Image
 import sys
 import math
+import time
 
 END_COLOR = (255, 0, 0)
 START_COLOR = (0, 255, 0)
@@ -94,10 +95,10 @@ class Graph:
             node = predecessors[node]
         
         return path
-                    
 
-class Node:
-    pass
+def removeAlpha(imgData):
+    for i in range(len(imgData)):
+        imgData[i] = imgData[i][:3]
 
 def convert1D(i, imageWidth):
     return (i % imageWidth, i // imageWidth)
@@ -132,37 +133,57 @@ def isPath(i, imgData, imgWidth):
         or imgData[i] == END_COLOR \
         or imgData[i] == START_COLOR
 
+""" Draws BORDER_COLOR over dead ends. """
+def reflectTrim(image, G):
+    for i in range(len(imgData)):
+        if not i in G.edgeList:
+            image.putpixel(convert1D(i, image.width), BORDER_COLOR)
+
 
 if __name__ == "__main__":
 
     # Get input for maze image
 
-    fp = input("Enter path to maze to be solved: ")
+    if len(sys.argv) < 2:
+        fp = input("Enter a path to a maze image:")
+    else:
+        fp = sys.argv[1]
+
+    showTrim = False
+    if "--show-trim" in sys.argv:
+        showTrim = True
+    
+
     image = Image.open(fp)
     if image is None:
         print("Cannot find file.")
         sys.exit()
     imgData = list(image.getdata())
 
+    # Remove the alpha component of imgData so equalities are accurate
+    removeAlpha(imgData)
+
     # Find start (green) and end (red) points
 
     print("Scanning for start and end points...", end = " ")
 
     start, end = getEndPoints(imgData, image.width)
-    if (start):
+    if (not start is None):
         print(f"Start found at {start}.", end = " ")
     else:
         print("Start not found, closing.")
         sys.exit()
-    if (end):
+    if (not end is None):
         print(f"End found at {end}.")
     else:
         print("End not found, closing.")
         sys.exit()
 
     # Build graph of maze.
-    # Here each path pixel will be a node in the graph
-
+    # Here each path pixel will be a node in the graph.
+    
+    timeStart = time.time()
+    print("Creating Graph...", end=" ", flush=True)
     G = Graph()
     for i in range(len(imgData)):
         if isPath(i, imgData, image.width):
@@ -176,42 +197,36 @@ if __name__ == "__main__":
             up = i - image.width
             if isPath(up, imgData, image.width):
                 G.addEdge(i, up)
-
-    print(G.edgeList) # temp
+    print(f"Done ({(time.time() - timeStart):.2f}s)")
 
     # Hack: put a fake edge connection for start and end nodes so that
-    # trim doesn't remove them
+    # trim doesn't remove them.
     G.edgeList[start].append(-1)
     G.edgeList[end].append(-1)
 
-    # Trim the graph to remove all dead ends speed up our search
+    # Trim the graph to remove all dead ends speed up our search.
+    timeStart = time.time()
+    print("Trimming...", end=" ", flush=True)
     G.trim()
+    print(f"Done ({(time.time() - timeStart):.2f}s)")
 
-    # Now that it is trimmed, remove the dummy connections
+    # Now that it is trimmed, remove the dummy connections.
     G.edgeList[start].remove(-1)
     G.edgeList[end].remove(-1)
 
-    # TEMP: Reflect changes in image
-    """
-    for i in range(len(imgData)):
-        if i in G.edgeList:
-            if i == start:
-                image.putpixel(convert1D(i, image.width), START_COLOR)
-            elif i == end:
-                image.putpixel(convert1D(i, image.width), END_COLOR)
-            else:
-                image.putpixel(convert1D(i, image.width), PATH_COLOR)
-        else:
-            image.putpixel(convert1D(i, image.width), BORDER_COLOR)
-    """
-    # End TEMP
-
+    # Cut out dead ends in final image.
+    if showTrim:
+        reflectTrim(image, G)
+    
     # Get shortestPath
+    timeStart = time.time()
+    print("Finding shortest path...", end=" ", flush=True)
     shortestPath = G.shortestPath(start, end)
+    print(f"Done ({(time.time() - timeStart):.2f}s)")
 
+    print(f"Shortest Path Length = {len(shortestPath)}")
 
-    # Reflect shortest path in image
-
+    # Draw shortest path onto image
     for i in shortestPath:
         image.putpixel(convert1D(i, image.width), SHORTEST_PATH_COLOR)
     
