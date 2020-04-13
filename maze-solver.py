@@ -1,4 +1,5 @@
 from PIL import Image
+from heapdict import heapdict
 import sys
 import math
 import time
@@ -56,36 +57,31 @@ class Graph:
             distances[node] = math.inf 
         distances[start] = 0
 
-        # Set up processed, which records if a node's shortest path has been determined
-        processed = {}
+        # Set up notProcessed, which records which nodes need to be processed.
+        # notProcessed is a priority queue which helps with asymptotic efficiency.
+        notProcessed = heapdict()
         for node in self.edgeList:
-            processed[node] = False
+            notProcessed[node] = distances[node]
 
         # Set up processed, which records the node used to get to node, 
         # in its shortest path
         predecessors = {}
         for node in self.edgeList:
             predecessors[node] = -1 
-
-        # Define a local function to pick the next node to process
-        def selectNextNode():
-            minDistance, minNode = math.inf, -1
-            for node in self.edgeList:
-                if distances[node] < minDistance and not processed[node]:
-                    minDistance, minNode = distances[node], node
-
-            return minNode
         
         # Perform Dijkstra's
-        current = selectNextNode()
-        while current != -1:
+        found = False
+        current = notProcessed.popitem()[0]
+        while notProcessed and not found:
             for node in self.edgeList[current]:
                 if distances[current] + 1 < distances[node]:
                     distances[node] = distances[current] + 1
+                    notProcessed[node] = distances[node]
                     predecessors[node] = current
-                processed[current] = True
-
-            current = selectNextNode()
+            if current == end:
+                found = True
+            
+            current = notProcessed.popitem()[0]
 
         # backtrack and return shortest path
         path = []
@@ -198,25 +194,6 @@ if __name__ == "__main__":
             if isPath(up, imgData, image.width):
                 G.addEdge(i, up)
     print(f"Done ({(time.time() - timeStart):.2f}s)")
-
-    # Hack: put a fake edge connection for start and end nodes so that
-    # trim doesn't remove them.
-    G.edgeList[start].append(-1)
-    G.edgeList[end].append(-1)
-
-    # Trim the graph to remove all dead ends speed up our search.
-    timeStart = time.time()
-    print("Trimming...", end=" ", flush=True)
-    G.trim()
-    print(f"Done ({(time.time() - timeStart):.2f}s)")
-
-    # Now that it is trimmed, remove the dummy connections.
-    G.edgeList[start].remove(-1)
-    G.edgeList[end].remove(-1)
-
-    # Cut out dead ends in final image.
-    if showTrim:
-        reflectTrim(image, G)
     
     # Get shortestPath
     timeStart = time.time()
