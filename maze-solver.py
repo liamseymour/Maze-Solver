@@ -8,7 +8,7 @@ END_COLOR = (255, 0, 0)
 START_COLOR = (0, 255, 0)
 PATH_COLOR = (255, 255, 255)
 BORDER_COLOR = (0, 0, 0)
-SHORTEST_PATH_COLOR = (252, 232, 3)
+SHORTEST_PATH_COLOR = (66, 135, 245)
 
 class Graph:
     def __init__(self):
