@@ -144,11 +144,14 @@ if __name__ == "__main__":
         fp = input("Enter a path to a maze image:")
     else:
         fp = sys.argv[1]
-
-    showTrim = False
-    if "--show-trim" in sys.argv:
-        showTrim = True
     
+
+    # Different output name
+    outName = "out.png"
+    if "-o" in sys.argv:
+        if sys.argv.index("-o")+1 < len(sys.argv):
+            outName = sys.argv[sys.argv.index("-o")+1]
+
 
     image = Image.open(fp)
     if image is None:
@@ -212,4 +215,4 @@ if __name__ == "__main__":
     
     # Output modified image
 
-    image.save("out.png", "PNG")
+    image.save(outName, "PNG")
