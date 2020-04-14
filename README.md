@@ -2,10 +2,10 @@
 Simple python program that solve mazes.
 
 ![Basic Maze](/examples/maze-1.png=200x)
-![Basic Maze Solution](/examples/solution-1.png=200x)
+![Basic Maze Solution](/examples/solution-1.png =200x)
 
 ![Non-Ideal Maze](/examples/maze-2.png=200x)
-![Non-Ideal Maze Solution](/examples/solution-2.png=200x)
+![Non-Ideal Maze Solution](/examples/solution-2.png =200x)
 
 # Usage
 Maze-Solver looks for a red (0xff0000) pixel representing the end and a green (0x00ff00) pixel representing the start. Walls and borders are black (0x000000), paths are white (0xffffff).
