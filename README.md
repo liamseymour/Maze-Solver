@@ -3,6 +3,7 @@ Simple python program that solve mazes.
 
 ![Basic Maze](/examples/maze-1.png)
 ![Basic Maze Solution](/examples/solution-1.png)
+
 ![Non-Ideal Maze](/examples/maze-2.png)
 ![Non-Ideal Maze Solution](/examples/solution-2.png)
 
