@@ -165,6 +165,11 @@ if __name__ == "__main__":
         if sys.argv.index("-o")+1 < len(sys.argv):
             outName = sys.argv[sys.argv.index("-o")+1]
 
+    # Use diagonal pathing
+    diagonals = False
+    if "-d" in sys.argv:
+        diagonals = True
+
 
     image = Image.open(fp)
     if image is None:
@@ -209,6 +214,15 @@ if __name__ == "__main__":
             up = i - image.width
             if isPath(up, imgData, image.width):
                 G.addEdge(i, up)
+            # Experimental option to allow moving diagonally accross pixels
+            if diagonals:
+                upLeft = up - 1
+                if isPath(upLeft, imgData, image.width):
+                    G.addEdge(i, upLeft)
+                upRight = up + 1
+                if isPath(upRight, imgData, image.width):
+                    G.addEdge(i, upRight)
+                
     print(f"Done ({(time.time() - timeStart):.2f}s)")
     
     # Get shortestPath
@@ -217,15 +231,20 @@ if __name__ == "__main__":
     shortestPath = G.shortestPath(start, end)
     print(f"Done ({(time.time() - timeStart):.2f}s)")
 
-    print(f"Shortest Path Length = {len(shortestPath)}")
+    if shortestPath != None:
+        print(f"Shortest Path Length = {len(shortestPath)}")
 
-    # Draw shortest path onto image
-    for i in shortestPath:
-        image.putpixel(convert1D(i, image.width), SHORTEST_PATH_COLOR)
-    
-    image.putpixel(convert1D(start, image.width), START_COLOR)
-    image.putpixel(convert1D(end, image.width), END_COLOR)
-    
-    # Output modified image
+        # Draw shortest path onto image
+        for i in shortestPath:
+            image.putpixel(convert1D(i, image.width), SHORTEST_PATH_COLOR)
+        
+        image.putpixel(convert1D(start, image.width), START_COLOR)
+        image.putpixel(convert1D(end, image.width), END_COLOR)
+        
+        # Output modified image
 
-    image.save(outName, "PNG")
+        image.save(outName, "PNG")
+
+    # There is no possible route
+    else:
+        print("The maze cannot be solved. Aborting.")
