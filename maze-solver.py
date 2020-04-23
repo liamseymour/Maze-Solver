@@ -11,8 +11,9 @@ BORDER_COLOR = (0, 0, 0)
 SHORTEST_PATH_COLOR = (66, 135, 245)
 
 class Graph:
-    def __init__(self):
+    def __init__(self, imageWidth):
         self.edgeList = {}
+        self.imageWidth = imageWidth
 
     def addNode (self, n):
         self.edgeList[n] = []
@@ -48,49 +49,61 @@ class Graph:
                 self.removeNode(toRemove.pop())
                 removals += 1 
     
-    # Perform Dijkstra's algorithm and return the path from start to end
+    # Perform A* algorithm and return the path from start to end
     def shortestPath(self, start, end):
-        
-        # Set up distances, which records the current best way to get to each node
-        distances = {}
-        for node in self.edgeList:
-            distances[node] = math.inf 
-        distances[start] = 0
+        def reconstructPath(predacesors, current):
+            path = [current]
+            while current in predacesors:
+                current = predacesors[current]
+                path.append(current)
+            return path[::-1]
 
-        # Set up notProcessed, which records which nodes need to be processed.
-        # notProcessed is a priority queue which helps with asymptotic efficiency.
-        notProcessed = heapdict()
-        for node in self.edgeList:
-            notProcessed[node] = distances[node]
+        endx, endy = convert1D(end, self.imageWidth)
+        def h(n):
+            # Our heuristic is the Manhattan distance
+            nx, ny = convert1D(n, self.imageWidth)
+            return abs(endx - nx) + abs(endy - ny)
 
-        # Set up processed, which records the node used to get to node, 
-        # in its shortest path
-        predecessors = {}
-        for node in self.edgeList:
-            predecessors[node] = -1 
+        # Used to backtrack the best path
+        predacesors = {}
         
-        # Perform Dijkstra's
-        found = False
-        current = notProcessed.popitem()[0]
-        while notProcessed and not found:
-            for node in self.edgeList[current]:
-                if distances[current] + 1 < distances[node]:
-                    distances[node] = distances[current] + 1
-                    notProcessed[node] = distances[node]
-                    predecessors[node] = current
+        # Best known cost to each node
+        gScores = {}
+        for n in self.edgeList:
+            gScores[n] = math.inf
+        gScores[start] = 0
+
+        # Based on the heuristic, what is the best possible distance
+        # to get to the start
+        fScores = {}
+        for n in self.edgeList:
+            fScores[n] = math.inf
+        fScores[start] = h(start)
+
+        # Set of nodes that may need processed
+        openSet = heapdict()
+        openSet[start] = fScores[start]
+
+        while openSet:
+            current = openSet.peekitem()[0]
+
+            # Finished path
             if current == end:
-                found = True
-            
-            current = notProcessed.popitem()[0]
+                return reconstructPath(predacesors, current)
 
-        # backtrack and return shortest path
-        path = []
-        node = end
-        while node != -1:
-            path.append(node)
-            node = predecessors[node]
+            openSet.popitem()
+            for neighbor in self.edgeList[current]:
+                tentativeGScore = 1 + gScores[current]
+                if tentativeGScore < gScores[neighbor]:
+                    predacesors[neighbor] = current
+                    gScores[neighbor] = tentativeGScore
+                    fScores[neighbor] = gScores[neighbor] + h(neighbor)
+                    if not neighbor in openSet:
+                        openSet[neighbor] = fScores[neighbor]
+
+        # There is not path!
+        return None
         
-        return path
 
 def removeAlpha(imgData):
     for i in range(len(imgData)):
@@ -183,7 +196,7 @@ if __name__ == "__main__":
     
     timeStart = time.time()
     print("Creating Graph...", end=" ", flush=True)
-    G = Graph()
+    G = Graph(image.width)
     for i in range(len(imgData)):
         if isPath(i, imgData, image.width):
             # We add the pixel as a node and connect it to paths up and left of it
